@@ -45,3 +45,4 @@ citations:
       high: [src/**/*.ts, src/**/*.tsx]
       medium: [package.json]
       low: [.github/**, README.md, LICENSE]
+changelog: weekly

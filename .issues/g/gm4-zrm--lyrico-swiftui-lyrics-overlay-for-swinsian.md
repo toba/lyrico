@@ -5,11 +5,11 @@ status: in-progress
 type: feature
 priority: high
 created_at: 2026-04-25T20:40:15Z
-updated_at: 2026-04-25T20:51:55Z
+updated_at: 2026-04-25T21:03:33Z
 sync:
     github:
         issue_number: "1"
-        synced_at: "2026-04-25T20:54:00Z"
+        synced_at: "2026-04-25T21:04:28Z"
 ---
 
 A native macOS SwiftUI app that shows synced lyrics for the song currently playing in Swinsian. Inspired by [LyricGlow](https://github.com/ateymoori/lyricglow), but pure Swift and tied to Swinsian (not Spotify).
@@ -35,12 +35,12 @@ A native macOS SwiftUI app that shows synced lyrics for the song currently playi
 ## Tasks
 
 - [x] Scaffold SwiftUI macOS app (`xc-mcp scaffold_macos_project`)
-- [ ] `SwinsianClient` — ScriptingBridge wrapper around Swinsian's `.sdef`
+- [x] `SwinsianClient` — `NSAppleScript`-backed `PlaybackSource` (Swinsian persistent ID + position + state)
 - [x] `LRCLIBClient` — async API client with on-disk response cache
 - [x] `LRCParser` — parse synced + plain LRC, return `[LyricLine]`
 - [x] `LyricsEngine` — `@Observable`, snapshot-driven active-line state (polling driver lives in app target)
-- [ ] `OverlayWindow` — floating panel, draggable, pin toggle, opacity slider
-- [ ] `LyricsView` — current line large, prev/next dimmed, smooth scroll
+- [x] `OverlayWindow` — floating `Window` with `.windowLevel(.floating)`, hidden title bar, content-size resizing (basic; drag/pin/opacity TBD)
+- [x] `LyricsView` — prev/current/next layout, dimmed surrounding lines, eased animation on line change
 - [ ] Settings: font size, color, opacity, hotkey to toggle visibility
 - [ ] Menu bar icon (`MenuBarExtra`) for show/hide + preferences
 - [ ] README with screenshot, install instructions, attribution to LRCLIB
@@ -56,3 +56,9 @@ A native macOS SwiftUI app that shows synced lyrics for the song currently playi
 - LyricGlow (Spotify-based): https://github.com/ateymoori/lyricglow
 - LRCLIB API: https://lrclib.net/docs
 - Swinsian AppleScript dictionary: open in Script Editor → File → Open Dictionary → Swinsian
+
+
+## Implementation notes
+
+- `LRCLIBLyricsSource` adapter wraps `LRCLIBClient` + `LRCParser` for the `LyricsSource` protocol; prefers synced over plain lyrics; maps 404 to `nil`.
+- `SwinsianClient` uses `NSAppleScript` (simpler than `ScriptingBridge` header generation); ASCII US (0x1F) as field separator. AppleScript handles "Swinsian not running" / `stopped` / errors by returning sentinel strings that `parseResponse` maps to `nil`.

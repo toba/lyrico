@@ -6,5 +6,16 @@
 	<true/>
 	<key>com.apple.security.files.user-selected.read-only</key>
 	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>com.apple.security.scripting-targets</key>
+	<dict>
+		<key>com.swinsian.Swinsian</key>
+		<array>
+			<string>com.swinsian.scripting</string>
+		</array>
+	</dict>
 </dict>
 </plist>
