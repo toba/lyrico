@@ -1,0 +1,15 @@
+{
+  "originHash" : "4cc786ed3196e55c5f7308de3ff83e68a0e759467ab65b5418ee86db51a19fd5",
+  "pins" : [
+    {
+      "identity" : "swiftiomatic-plugins",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/toba/swiftiomatic-plugins",
+      "state" : {
+        "revision" : "d726adb293c8f8ef19b75ff23f59b8966f0fbf25",
+        "version" : "0.34.1"
+      }
+    }
+  ],
+  "version" : 3
+}

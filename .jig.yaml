@@ -1,0 +1,47 @@
+todo:
+  path: .issues
+  default_status: ready
+  default_type: task
+  sync:
+    github:
+      repo: toba/lyrico
+nope:
+  rules:
+    - name: git-no-verify
+      pattern: 'git\s+.*--no-verify'
+      message: "--no-verify is never allowed — fix the issue that's failing the hook
+        instead"
+    - name: git-checkout-switch
+      pattern: 'git\s+.*(checkout|switch|stash|restore)'
+      message: "git checkout/switch not allowed — branch changes require user approval"
+    - name: altering-jig
+      pattern: 'jig.yaml'
+      tools: ["Write", "Edit"]
+      message: "cannot reconfigure jig directly — print desired config and user will
+        edit"
+    - name: altering-config
+      pattern: 'swiftiomatic.json'
+      tools: ["Write", "Edit"]
+      message: "agent may not refer to the swiftiomatic.json file — just say
+        'configuration'"
+    - name: bypassing-mcp
+      pattern: 'swift (build|test)'
+      message: "Use xc-mcp to build and test"
+    - name: altering-project
+      pattern: '\.(xcode|pbx)proj'
+      tools: ["Write", "Edit"]
+      message: "Project may only be modified using xc-mcp"
+    - name: incompetent-agent
+      pattern: '"\, timeout: \d{3,}\)'
+      message: "Code is bad if anything takes that long. Must user shorter timeout."
+citations:
+  - repo: ateymoori/lyricglow
+    branch: main
+    notes: LyricGlow for macOS, an always-on-top Electron widget showing real-time,
+      word-by-word synced lyrics with glow effects, plus artist metadata and
+      album art. Works with Spotify, Apple Music, and YouTube Music. LRC
+      support, offline cache, and menu bar controls.
+    paths:
+      high: [src/**/*.ts, src/**/*.tsx]
+      medium: [package.json]
+      low: [.github/**, README.md, LICENSE]

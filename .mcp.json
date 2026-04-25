@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"xc-project": { "command": "/opt/homebrew/bin/xc-project" },
+		"xc-debug": { "command": "/opt/homebrew/bin/xc-debug" },
+		"xc-swift": { "command": "/opt/homebrew/bin/xc-swift" },
+		"xc-build": { "command": "/opt/homebrew/bin/xc-build" }
+	}
+}

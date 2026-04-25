@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(swiftformat Sources/ Tests/ Xcode/Lyrico/ 2>&1)",
+      "mcp__xc-swift__swift_package_build",
+      "mcp__xc-swift__swift_package_test",
+      "mcp__xc-build__list_schemes",
+      "mcp__xc-build__get_app_bundle_id"
+    ]
+  }
+}
