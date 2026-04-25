@@ -1,135 +1,27 @@
 name: release
 
 on:
-  push:
-    tags: ['v*']
+  release:
+    types: [published]
 
 jobs:
-  release:
-    runs-on: macos-15
-    permissions:
-      contents: write
-    outputs:
-      version: ${{ steps.meta.outputs.version }}
-      sha256: ${{ steps.sha.outputs.sha256 }}
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve metadata
-        id: meta
-        run: |
-          set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
-          PROJECT="$(find Xcode -maxdepth 1 -name '*proj' -type d | head -n1)"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "PROJECT=$PROJECT" >> "$GITHUB_ENV"
-
-      - name: Import signing certificate
-        env:
-          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-        run: |
-          set -euo pipefail
-          KEYCHAIN="$RUNNER_TEMP/build.keychain"
-          KEYCHAIN_PASSWORD="$(uuidgen)"
-          CERT_PATH="$RUNNER_TEMP/cert.p12"
-
-          echo -n "$MACOS_CERTIFICATE" | base64 --decode -o "$CERT_PATH"
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security import "$CERT_PATH" -k "$KEYCHAIN" -P "$MACOS_CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign -T /usr/bin/security
-          security set-key-partition-list -S apple-tool:,apple:,codesign: \
-            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          mapfile -t EXISTING < <(security list-keychains -d user | sed 's/^[[:space:]]*"//; s/"$//')
-          security list-keychains -d user -s "$KEYCHAIN" "${EXISTING[@]}"
-          rm -f "$CERT_PATH"
-
-      - name: Archive
-        run: |
-          set -euo pipefail
-          xcodebuild \
-            -project "$PROJECT" \
-            -scheme Lyrico \
-            -configuration Release \
-            -destination 'generic/platform=macOS,arch=arm64' \
-            -archivePath build/Lyrico.xcarchive \
-            MARKETING_VERSION="$VERSION" \
-            CURRENT_PROJECT_VERSION="$VERSION" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Developer ID Application" \
-            DEVELOPMENT_TEAM=D6GX9PC3SR \
-            archive
-
-      - name: Export archive
-        run: |
-          set -euo pipefail
-          xcodebuild -exportArchive \
-            -archivePath build/Lyrico.xcarchive \
-            -exportPath build/export \
-            -exportOptionsPlist .github/ExportOptions.plist
-
-      - name: Notarize and staple app
-        env:
-          AC_API_KEY: ${{ secrets.AC_API_KEY }}
-          AC_API_KEY_ID: ${{ secrets.AC_API_KEY_ID }}
-          AC_API_KEY_ISSUER_ID: ${{ secrets.AC_API_KEY_ISSUER_ID }}
-        run: |
-          set -euo pipefail
-          KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
-          echo -n "$AC_API_KEY" | base64 --decode -o "$KEY_PATH"
-
-          ditto -c -k --keepParent build/export/Lyrico.app build/Lyrico.zip
-          xcrun notarytool submit build/Lyrico.zip \
-            --key "$KEY_PATH" \
-            --key-id "$AC_API_KEY_ID" \
-            --issuer "$AC_API_KEY_ISSUER_ID" \
-            --wait
-          xcrun stapler staple build/export/Lyrico.app
-          rm -f "$KEY_PATH"
-
-      - name: Build DMG
-        run: |
-          set -euo pipefail
-          brew install create-dmg
-          DMG="build/Lyrico-$VERSION.dmg"
-          create-dmg \
-            --volname "Lyrico" \
-            --window-size 500 300 \
-            --icon "Lyrico.app" 150 150 \
-            --app-drop-link 350 150 \
-            "$DMG" \
-            build/export/Lyrico.app
-          xcrun stapler staple "$DMG"
-
-      - name: Compute sha256
-        id: sha
-        run: |
-          set -euo pipefail
-          DMG="build/Lyrico-$VERSION.dmg"
-          SHA256="$(shasum -a 256 "$DMG" | awk '{print $1}')"
-          echo "$SHA256" > "$DMG.sha256"
-          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
-
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          gh release create "v$VERSION" \
-            "build/Lyrico-$VERSION.dmg" \
-            "build/Lyrico-$VERSION.dmg.sha256" \
-            --title "v$VERSION" \
-            --generate-notes
-
   update-cask:
-    needs: release
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve metadata
+        id: meta
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          DMG="Lyrico-$VERSION.dmg"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "$DMG"
+          SHA256="$(shasum -a 256 "$DMG" | awk '{print $1}')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+
       - name: Checkout tap
         uses: actions/checkout@v4
         with:
@@ -139,8 +31,8 @@ jobs:
 
       - name: Bump cask
         env:
-          VERSION: ${{ needs.release.outputs.version }}
-          SHA256: ${{ needs.release.outputs.sha256 }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          SHA256: ${{ steps.meta.outputs.sha256 }}
         run: |
           set -euo pipefail
           CASK=tap/Casks/lyrico.rb

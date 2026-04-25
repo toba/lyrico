@@ -5,11 +5,11 @@ status: review
 type: feature
 priority: normal
 created_at: 2026-04-25T21:05:50Z
-updated_at: 2026-04-25T21:16:48Z
+updated_at: 2026-04-25T21:46:01Z
 sync:
     github:
         issue_number: "2"
-        synced_at: "2026-04-25T21:18:13Z"
+        synced_at: "2026-04-25T21:46:33Z"
 ---
 
 ## Goal
@@ -92,16 +92,30 @@ After the release artifact is uploaded, a job should:
 - Earlier conversation: `/brew` skill flagged as CLI-only; opted to defer until release pipeline exists
 
 
-## In-tree changes landed
+## Distribution model
 
-- Shared scheme `Lyrico` added under the Xcode project (via xc-mcp) so `xcodebuild -scheme Lyrico` works in CI
-- `.github/workflows/release.yml` — tag-triggered build → sign → notarize → staple → DMG → release; second job rewrites the cask in `toba/homebrew-lyrico` using `HOMEBREW_TAP_TOKEN`
-- `.github/ExportOptions.plist` — Developer ID, manual signing, team `D6GX9PC3SR`
+User signs + notarizes the `.dmg` **locally** (with their Developer ID) and uploads it to a GitHub Release. CI does the cask bump only — no signing secrets needed.
+
+## In-tree
+
+- Shared scheme `Lyrico` added under the Xcode project so `xcodebuild -scheme Lyrico` works
+- `.github/workflows/release.yml` — fires on `release: published`, downloads the user-uploaded `Lyrico-X.Y.Z.dmg`, computes sha256, rewrites `Casks/lyrico.rb` in `toba/homebrew-lyrico`
 - `README.md` — documents `brew install --cask toba/lyrico/lyrico`
+
+## Required secrets
+
+- [x] `HOMEBREW_TAP_TOKEN` (fine-grained PAT, Contents read/write on `toba/homebrew-lyrico`) — ready
+
+## Per-release flow
+
+1. Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in the Xcode project
+2. Archive in Xcode (Developer ID, manual signing)
+3. Notarize + staple locally (`xcrun notarytool submit … --wait && xcrun stapler staple`)
+4. Package as `Lyrico-X.Y.Z.dmg`
+5. `gh release create vX.Y.Z Lyrico-X.Y.Z.dmg --generate-notes`
+6. CI fires, bumps the cask
 
 ## Still required before first release
 
-- [ ] User adds repo secrets: `MACOS_CERTIFICATE`, `MACOS_CERTIFICATE_PASSWORD`, `AC_API_KEY`, `AC_API_KEY_ID`, `AC_API_KEY_ISSUER_ID`, `HOMEBREW_TAP_TOKEN`
-- [ ] User adds `companions.brew: toba/homebrew-lyrico` to the project config (agent is blocked from editing it directly)
-- [ ] Out-of-tree: create initial `Casks/lyrico.rb` in `toba/homebrew-lyrico` (placeholder version + sha256 — CI overwrites on first tag). Use `depends_on macos: ">= :tahoe"`.
-- [ ] Tag `v0.x.y` and verify the release workflow + cask update end to end
+- [ ] Out-of-tree: create initial `Casks/lyrico.rb` in `toba/homebrew-lyrico` (placeholder `version` + `sha256` — CI overwrites). Use `depends_on macos: ">= :tahoe"`.
+- [ ] Cut `v0.x.y` end-to-end and confirm the cask bump lands
