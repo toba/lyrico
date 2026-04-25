@@ -34,13 +34,11 @@ public actor LyricsPoller {
     }
 
     public func tick() async {
-        let snapshot: PlaybackSnapshot?
-
         do {
-            snapshot = try await source.snapshot()
+            let snapshot = try await source.snapshot()
+            await engine.update(with: snapshot)
         } catch {
-            snapshot = nil
+            await engine.reportSourceError(error)
         }
-        await engine.update(with: snapshot)
     }
 }

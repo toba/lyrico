@@ -64,6 +64,14 @@ public final class LyricsEngine {
         status = .idle
     }
 
+    public func reportSourceError(_ error: any Error) {
+        nowPlaying = nil
+        document = nil
+        currentIndex = nil
+        lastFetchKey = nil
+        status = .error(String(describing: error))
+    }
+
     public func update(with snapshot: PlaybackSnapshot?) async {
         nowPlaying = snapshot
 

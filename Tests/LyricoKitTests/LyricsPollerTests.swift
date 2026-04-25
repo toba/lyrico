@@ -26,8 +26,8 @@ struct LyricsPollerTests {
         #expect(status == .ready)
     }
 
-    @Test("tick swallows source errors and posts nil snapshot")
-    func tickSwallowsErrors() async {
+    @Test("tick surfaces source errors to engine status")
+    func tickSurfacesSourceErrors() async {
         let source = FakePlaybackSource(error: FakeError.boom)
         let lyrics = StubLyricsSource(document: .stub)
         let engine = await LyricsEngine(lyrics: lyrics)
@@ -38,7 +38,9 @@ struct LyricsPollerTests {
         let nowPlaying = await engine.nowPlaying
         let status = await engine.status
         #expect(nowPlaying == nil)
-        #expect(status == .idle)
+        if case .error = status {} else {
+            Issue.record("expected .error status, got \(status)")
+        }
     }
 
     @Test("start triggers periodic ticks; stop ends the loop")

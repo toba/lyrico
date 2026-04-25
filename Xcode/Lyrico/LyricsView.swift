@@ -14,7 +14,7 @@ struct LyricsView: View {
       case .notFound:
         statusText("No lyrics found")
       case .error(let message):
-        statusText("Error: \(message)")
+        statusText(errorText(message))
           .foregroundStyle(.red)
       case .ready:
         if let document = engine.document {
@@ -28,6 +28,13 @@ struct LyricsView: View {
     .frame(minWidth: 480, minHeight: 200)
     .background(.thinMaterial)
     .animation(.easeInOut(duration: 0.25), value: engine.currentIndex)
+  }
+
+  private func errorText(_ message: String) -> String {
+    if message.contains("notAuthorized") {
+      return "Lyrico needs permission to control Swinsian.\nGrant access in System Settings → Privacy & Security → Automation."
+    }
+    return "Error: \(message)"
   }
 
   private func statusText(_ text: String) -> some View {

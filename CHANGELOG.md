@@ -9,3 +9,4 @@
 ### 🐞 Fixes
 
 - Make `brew install --cask lyrico` actually work ([#3](https://github.com/toba/lyrico/issues/3))
+- Fix app stuck on "Waiting for Swinsian…" even when Swinsian is running ([#4](https://github.com/toba/lyrico/issues/4))

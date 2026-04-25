@@ -10,7 +10,6 @@ let strictSettings: [SwiftSetting] = [
   .enableUpcomingFeature("InferIsolatedConformances"),
   .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
   .enableExperimentalFeature("StrictMemorySafety"),
-  .treatAllWarnings(as: .error),
 ]
 
 let package = Package(

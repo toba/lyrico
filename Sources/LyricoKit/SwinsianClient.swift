@@ -2,9 +2,12 @@ internal import Foundation
 
 public enum SwinsianError: Error, Sendable, Equatable {
     case scriptFailed(String)
+    case notAuthorized
 }
 
 public actor SwinsianClient: PlaybackSource {
+    public static let bundleIdentifier = "com.swinsian.Swinsian"
+
     private let scriptSource: String
 
     public init() { self.init(scriptSource: SwinsianClient.defaultScript) }
@@ -19,7 +22,12 @@ public actor SwinsianClient: PlaybackSource {
         var error: NSDictionary?
         let descriptor = unsafe script.executeAndReturnError(&error)
 
-        if let error { throw SwinsianError.scriptFailed(String(describing: error)) }
+        if let error {
+            let code = (error[NSAppleScript.errorNumber] as? Int) ?? 0
+            if code == -1743 { throw SwinsianError.notAuthorized }
+            if code == -600 { return nil } // Swinsian not running
+            throw SwinsianError.scriptFailed(String(describing: error))
+        }
 
         guard let raw = descriptor.stringValue else { return nil }
         return Self.parseResponse(raw)
@@ -59,15 +67,12 @@ public actor SwinsianClient: PlaybackSource {
     }
 
     static let defaultScript = """
-        tell application "System Events"
-          if not (exists process "Swinsian") then return ""
-        end tell
         tell application "Swinsian"
           try
             if player state is stopped then return "stopped"
             set t to current track
             set d to (ASCII character 31)
-            return (persistent ID of t as text) & d & ¬
+            return (id of t as text) & d & ¬
               (artist of t as text) & d & ¬
               (name of t as text) & d & ¬
               (album of t as text) & d & ¬
