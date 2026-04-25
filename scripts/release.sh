@@ -29,9 +29,20 @@ DMG_DIR="$BUILD_DIR/dmg"
 DMG_NAME="Lyrico-$VERSION.dmg"
 DMG_PATH="$BUILD_DIR/$DMG_NAME"
 EXPORT_PLIST="$BUILD_DIR/ExportOptions.plist"
+SIGN_XCCONFIG="$BUILD_DIR/Sign.xcconfig"
 
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR" "$DMG_DIR"
+
+cat > "$SIGN_XCCONFIG" <<XCCONFIG
+CODE_SIGN_STYLE = Manual
+DEVELOPMENT_TEAM = $TEAM_ID
+PROVISIONING_PROFILE_SPECIFIER =
+CODE_SIGN_IDENTITY = $SIGN_IDENTITY
+CODE_SIGN_IDENTITY[sdk=macosx*] = $SIGN_IDENTITY
+SWIFT_SUPPRESS_WARNINGS = NO
+OTHER_CODE_SIGN_FLAGS = --timestamp --options=runtime
+XCCONFIG
 
 cat > "$EXPORT_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -50,12 +61,11 @@ xcodebuild \
   -configuration Release \
   -destination "generic/platform=macOS" \
   -archivePath "$ARCHIVE" \
+  -xcconfig "$SIGN_XCCONFIG" \
+  -skipPackagePluginValidation \
+  -skipMacroValidation \
   MARKETING_VERSION="$VERSION" \
   CURRENT_PROJECT_VERSION="$VERSION" \
-  CODE_SIGN_STYLE=Automatic \
-  CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
-  DEVELOPMENT_TEAM="$TEAM_ID" \
-  OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
   archive
 
 echo "==> Exporting .app"

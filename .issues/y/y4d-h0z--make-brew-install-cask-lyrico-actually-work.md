@@ -1,11 +1,11 @@
 ---
 # y4d-h0z
 title: Make brew install --cask lyrico actually work
-status: review
+status: completed
 type: bug
 priority: high
 created_at: 2026-04-25T22:04:01Z
-updated_at: 2026-04-25T22:06:19Z
+updated_at: 2026-04-25T22:41:19Z
 ---
 
 ## Problem
@@ -48,3 +48,14 @@ updated_at: 2026-04-25T22:06:19Z
 4. Run `scripts/release.sh 0.3.1` to publish the first real release; the workflow will create `Casks/lyrico.rb` in `toba/homebrew-tap`.
 
 The previously-pushed tags (v0.1.0–v0.3.1) have no GitHub releases attached and are effectively dead — the script will create the release on the existing tag if present.
+
+
+
+## Fix log
+
+- Hit `-warnings-as-errors` vs `-suppress-warnings` conflict (Xcode injects the latter for SPM deps in Release). Override with `SWIFT_SUPPRESS_WARNINGS=NO` via xcconfig.
+- Hit lint warnings escalated to errors via swiftiomatic's `treatAllWarnings(as: .error)`. Ran `swift package format-source-code` to autofix.
+- Hit automatic-vs-manual signing conflict. Switched to manual via xcconfig with `CODE_SIGN_IDENTITY[sdk=macosx*]`.
+- v0.3.1 release built, signed, notarized, stapled, published. DMG sha256 `0f4cb345...`.
+- v0.3.1 workflow run failed because the tag commit (`5711687`) still had old workflow pointing at `toba/homebrew-lyrico`. Manually published `Casks/lyrico.rb` to `toba/homebrew-tap` via API. Future tags cut from main will use the fixed workflow.
+- Verified: `brew install --cask toba/tap/lyrico` ✅
