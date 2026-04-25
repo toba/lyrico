@@ -9,7 +9,7 @@ always-on-top window.
 ## Install
 
 ```sh
-brew install --cask toba/lyrico/lyrico
+brew install --cask toba/tap/lyrico
 ```
 
 Requires macOS 26 (Tahoe) or later.

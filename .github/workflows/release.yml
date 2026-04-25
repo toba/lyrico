@@ -25,7 +25,7 @@ jobs:
       - name: Checkout tap
         uses: actions/checkout@v4
         with:
-          repository: toba/homebrew-lyrico
+          repository: toba/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: tap
 
@@ -35,12 +35,37 @@ jobs:
           SHA256: ${{ steps.meta.outputs.sha256 }}
         run: |
           set -euo pipefail
+          mkdir -p tap/Casks
           CASK=tap/Casks/lyrico.rb
-          sed -i -E "s/^([[:space:]]*version )\".*\"/\1\"$VERSION\"/" "$CASK"
-          sed -i -E "s/^([[:space:]]*sha256 )\".*\"/\1\"$SHA256\"/" "$CASK"
+          if [[ ! -f "$CASK" ]]; then
+            cat > "$CASK" <<RUBY
+          cask "lyrico" do
+            version "$VERSION"
+            sha256 "$SHA256"
+
+            url "https://github.com/toba/lyrico/releases/download/v#{version}/Lyrico-#{version}.dmg"
+            name "Lyrico"
+            desc "Floating synced-lyrics overlay for Swinsian"
+            homepage "https://github.com/toba/lyrico"
+
+            depends_on macos: ">= :tahoe"
+
+            app "Lyrico.app"
+
+            zap trash: [
+              "~/Library/Preferences/app.toba.lyrico.plist",
+              "~/Library/Caches/app.toba.lyrico",
+            ]
+          end
+          RUBY
+          else
+            sed -i -E "s/^([[:space:]]*version )\".*\"/\1\"$VERSION\"/" "$CASK"
+            sed -i -E "s/^([[:space:]]*sha256 )\".*\"/\1\"$SHA256\"/" "$CASK"
+          fi
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Casks/lyrico.rb
+          git diff --cached --quiet && { echo "no changes"; exit 0; }
           git commit -m "lyrico $VERSION"
           git push
